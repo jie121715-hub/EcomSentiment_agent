@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>电商领域智能问答与业务处理Agent系统 — 项目架构图</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0b1120;color:#e2e8f0;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;line-height:1.6;padding:32px 16px}
+.wrap{max-width:1500px;margin:0 auto}
+h1{text-align:center;font-size:30px;margin-bottom:4px}
+h2{font-size:14px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:2px;margin:36px 0 14px 4px}
+.sub{text-align:center;color:#64748b;font-size:13px;margin-bottom:36px}
+
+/* Section */
+.sec{background:#111827;border:1px solid #1e293b;border-radius:16px;padding:24px 28px;margin-bottom:20px}
+.sec-title{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.sec-title .icon{font-size:22px}
+.sec-title .badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+
+/* Flex grid */
+.grid{display:grid;gap:14px}
+.grid2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.grid3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.grid4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+
+/* Card */
+.card{background:#1a2332;border:1px solid #1e3b4f;border-radius:10px;padding:16px 18px;transition:.2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.35);border-color:#2563eb}
+.card-h{font-size:14px;font-weight:700;margin-bottom:6px}
+.card-p{font-size:12px;color:#94a3b8;line-height:1.7}
+.card-p b{color:#cbd5e1}
+
+/* Colors */
+.c-blue .card{border-left:3px solid #3b82f6}.c-blue .card-h{color:#60a5fa}
+.c-green .card{border-left:3px solid #10b981}.c-green .card-h{color:#34d399}
+.c-purple .card{border-left:3px solid #8b5cf6}.c-purple .card-h{color:#a78bfa}
+.c-orange .card{border-left:3px solid #f59e0b}.c-orange .card-h{color:#fbbf24}
+.c-red .card{border-left:3px solid #ef4444}.c-red .card-h{color:#f87171}
+.c-pink .card{border-left:3px solid #ec4899}.c-pink .card-h{color:#f472b6}
+.c-cyan .card{border-left:3px solid #06b6d4}.c-cyan .card-h{color:#22d3ee}
+
+/* Flow */
+.flow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:16px 0}
+.flow-item{background:#1a2332;border:1px solid #334155;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;text-align:center;white-space:nowrap}
+.flow-item small{display:block;font-weight:400;font-size:10px;color:#64748b;margin-top:2px}
+.flow-arrow{color:#475569;font-size:20px;font-weight:700}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}
+.tbl th{background:#1e293b;color:#94a3b8;padding:10px 12px;text-align:left;font-weight:600;border-bottom:2px solid #334155}
+.tbl td{padding:8px 12px;border-bottom:1px solid #1e293b}
+.tbl tr:hover td{background:rgba(59,130,246,.05)}
+.tbl .hi{color:#34d399;font-weight:700}
+
+/* Tags */
+.tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;margin:2px 3px;font-weight:500}
+.tag-blue{background:rgba(59,130,246,.15);color:#93c5fd}
+.tag-green{background:rgba(16,185,129,.15);color:#6ee7b7}
+.tag-purple{background:rgba(139,92,246,.15);color:#c4b5fd}
+.tag-orange{background:rgba(245,158,11,.15);color:#fcd34d}
+.tag-red{background:rgba(239,68,68,.15);color:#fca5a5}
+.tag-cyan{background:rgba(6,182,212,.15);color:#67e8f9}
+.tag-pink{background:rgba(236,72,153,.15);color:#f9a8d4}
+
+/* Timeline */
+.tl{position:relative;padding-left:28px}
+.tl::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:#334155}
+.tl-item{position:relative;margin-bottom:14px;font-size:12px}
+.tl-item::before{content:'';position:absolute;left:-24px;top:6px;width:10px;height:10px;border-radius:50%;background:#3b82f6}
+.tl-item:nth-child(2)::before{background:#10b981}
+.tl-item:nth-child(3)::before{background:#8b5cf6}
+.tl-item:nth-child(4)::before{background:#f59e0b}
+.tl-item:nth-child(5)::before{background:#ec4899}
+.tl-item b{color:#e2e8f0}
+
+/* Metric */
+.metric{text-align:center;padding:12px}
+.metric-val{font-size:28px;font-weight:800}
+.metric-lbl{font-size:11px;color:#64748b;margin-top:2px}
+
+hr{width:100%;border:none;border-top:1px solid #1e293b;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>🛒 电商智能问答与业务处理系统</h1>
+<p class="sub">Multi-Agent · 三层检索(Redis→BM25→RAG) · 父子块 · 高危门控 · 工业级工程落地 &nbsp;|&nbsp; v4.0 &nbsp;|&nbsp; 2026.07</p>
+
+<!-- ═══════════════ 核心指标 ═══════════════ -->
+<div class="sec">
+<div class="grid grid4" style="text-align:center">
+  <div class="metric"><div class="metric-val" style="color:#60a5fa">5</div><div class="metric-lbl">协同 Agent</div></div>
+  <div class="metric"><div class="metric-val" style="color:#34d399">4</div><div class="metric-lbl">模型路线 (RF→BERT→蒸馏→LLM)</div></div>
+  <div class="metric"><div class="metric-val" style="color:#fbbf24">189</div><div class="metric-lbl">模拟数据 (商品+订单+知识+FAQ)</div></div>
+  <div class="metric"><div class="metric-val" style="color:#a78bfa">3</div><div class="metric-lbl">数据源 (MySQL+Milvus+外部API)</div></div>
+  <div class="metric"><div class="metric-val" style="color:#f87171">89.5%</div><div class="metric-lbl">BERT 情感 F1</div></div>
+  <div class="metric"><div class="metric-val" style="color:#f472b6">87.3%</div><div class="metric-lbl">蒸馏 BiLSTM F1 (25MB)</div></div>
+  <div class="metric"><div class="metric-val" style="color:#22d3ee">&lt;10ms</div><div class="metric-lbl">蒸馏模型推理</div></div>
+  <div class="metric"><div class="metric-val" style="color:#fb923c">SSE</div><div class="metric-lbl">流式响应</div></div>
+  <div class="metric"><div class="metric-val" style="color:#34d399">三层检索</div><div class="metric-lbl">Redis→BM25→RAG</div></div>
+  <div class="metric"><div class="metric-val" style="color:#f87171">30+</div><div class="metric-lbl">高危关键词门控</div></div>
+  <div class="metric"><div class="metric-val" style="color:#a78bfa">~400ms</div><div class="metric-lbl">平均响应延迟</div></div>
+  <div class="metric"><div class="metric-val" style="color:#34d399">BGE-M3</div><div class="metric-lbl">1024维稠密+稀疏</div></div>
+</div>
+</div>
+
+<!-- ═══════════════ 系统全景架构 ═══════════════ -->
+<h2>🏗️ 系统全景架构（7层）</h2>
+<div class="sec">
+<div class="flow">
+  <div class="flow-item" style="border-color:#f59e0b">👤 用户<br><small>Web / API / 商户</small></div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#3b82f6">🌐 API 网关<br><small>FastAPI + CORS + SSE</small></div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#8b5cf6">🎯 感知层<br><small>BERT情感 + BERT意图 + LLM-NER</small></div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#f59e0b">🧠 路由层<br><small>三维决策 · 4路分发</small></div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#10b981">⚙️ 执行层<br><small>5 Agent 并行</small></div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#ef4444">🗄️ 数据层<br><small>MySQL + Milvus + Redis + API</small></div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#ec4899">🤖 LLM层<br><small>DeepSeek-V4 + 本地BERT</small></div>
+</div>
+</div>
+
+<!-- ═══════════════ 1. API 层 ═══════════════ -->
+<h2>🔌 1. API 网关层 — FastAPI</h2>
+<div class="sec c-blue">
+<div class="grid grid3">
+  <div class="card"><div class="card-h">POST /chat</div><div class="card-p">非流式对话<br>完整 AgentResponse (感知+路由+回复)<br>2000字符上限 · JSON响应</div></div>
+  <div class="card"><div class="card-h">POST /chat/stream</div><div class="card-p">SSE 流式对话<br>event: perception → route → token → done<br>实时逐字输出 · Nginx友好</div></div>
+  <div class="card"><div class="card-h">/admin/knowledge/*</div><div class="card-p">知识库管理 CRUD<br>GET 列表 · POST 新增 · DELETE 删除<br>POST /batch 批量导入 · POST /sync 向量同步</div></div>
+  <div class="card"><div class="card-h">/admin/knowledge/import-taobao</div><div class="card-p">淘宝商品导入<br>AppKey+Secret+Session授权<br>在售商品 → 知识库 → 向量化</div></div>
+  <div class="card"><div class="card-h">GET /health</div><div class="card-p">健康检查 · 版本号 · 环境信息<br>K8s就绪探针友好</div></div>
+  <div class="card"><div class="card-h">GET / (静态首页)</div><div class="card-p">智能问答对话界面<br>SSE流式渲染 · Markdown展示<br>情感/意图透明化标签</div></div>
+</div>
+</div>
+
+<!-- ═══════════════ 2. Agent 编排层 ═══════════════ -->
+<h2>🧠 2. Agent 编排层 — Perception → Router → 5 Agent</h2>
+<div class="sec c-purple">
+<div class="grid grid2" style="margin-bottom:16px">
+  <div class="card">
+    <div class="card-h">🎯 PerceptionAgent · 感知层</div>
+    <div class="card-p">
+      <b>情感分析 (两段式):</b> BERT本地2分类(正/负, F1=89.5%) → LLM细分为7种情感标签 (happy/grateful/neutral/confused/anxious/angry/disappointed)<br>
+      <b>意图识别 (两段式):</b> BERT本地8分类(产品咨询/价格/求推荐/查物流/售后/投诉/改单/闲聊) → LLM置信度修正<br>
+      <b>实体抽取:</b> LLM提取 order_id / SKU / product_name / tracking_no<br>
+      <b>降级:</b> BERT失败 → LLM零样本兜底
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h">🧠 RoutingAgent v3 · 三维决策「大脑」</div>
+    <div class="card-p">
+      <b>维度① 置信度门控:</b> intent_confidence &lt; 50% → 内联反问澄清 (模板优先 + LLM兜底)，不盲目分发<br>
+      <b>维度② 情绪紧急度:</b> ANGRY×(投诉|退款|改单) → CRITICAL → 直接转人工 + 自动创建工单<br>
+      <b>维度③ 意图分发:</b> 9意图 → 4路目标Agent<br>
+      <b>智能修正:</b> 订单号/快递单号格式识别 → 强制重路由 · 正面情绪+投诉 → 修正为闲聊
+    </div>
+  </div>
+</div>
+<hr>
+<div class="grid grid4">
+  <div class="card"><div class="card-h" style="color:#34d399">📚 KnowledgeQAAgent<br><span class="tag tag-green">主路径 80%流量</span></div><div class="card-p">完整RAG管线 (缓存→改写→检索→精排→质检→生成→后处理)<br>含闲聊快速通道 (QUICK_REPLIES 毫秒级)<br>RAG无结果 → 淘宝API实时兜底</div></div>
+  <div class="card"><div class="card-h" style="color:#60a5fa">📦 BusinessAgent<br><span class="tag tag-blue">读写合一</span></div><div class="card-p">📖查物流 · 查订单 · 查库存 (SELECT)<br>✏️取消 · 退款 · 改地址 (UPDATE需确认)<br>快递单号 → 直连快递鸟API实时查询</div></div>
+  <div class="card"><div class="card-h" style="color:#fb923c">📝 KnowledgeMgmtAgent<br><span class="tag tag-orange">双写</span></div><div class="card-p">商户知识录入<br>MySQL持久化 + Milvus向量化<br>关键词触发: "帮我记"/"录入"/"添加规则"</div></div>
+  <div class="card"><div class="card-h" style="color:#f87171">🚨 Escalate<br><span class="tag tag-red">转人工</span></div><div class="card-p">情绪紧急接管<br>自动创建工单 (TK-YYYYMMDD-XXXX)<br>返回客服电话+工单编号</div></div>
+</div>
+</div>
+
+<!-- ═══════════════ 3. 三层检索架构 (v4.0 核心升级) ═══════════════ -->
+<h2>🔍 3. 三层检索架构 (v4.0 核心升级) — Redis → BM25+MySQL FAQ → RAG</h2>
+<div class="sec c-green">
+<div class="flow">
+  <div class="flow-item" style="border-color:#f87171">⚡ 第1层: Redis<br><small>精确缓存 &lt;5ms<br>命中率~30%</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#fbbf24">🔎 第2层: BM25+MySQL<br><small>FAQ关键词 ~15ms<br>命中率~50%</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">🧬 第3层: RAG<br><small>Milvus+LLM ~2s<br>命中率~20%</small></div>
+</div>
+<div style="text-align:center;font-size:13px;color:#64748b;margin:8px 0">
+  加权平均延迟: 0.3×3ms + 0.5×15ms + 0.2×2000ms ≈ <b style="color:#34d399">~408ms</b>（相比旧版 3000ms 提升约 <b style="color:#34d399">7倍</b>）
+</div>
+<hr>
+<div class="grid grid2">
+  <div class="card">
+    <div class="card-h" style="color:#f87171">⚡ 第1层: Redis 精确缓存</div>
+    <div class="card-p">
+      <b>Key:</b> answer:{query}<br>
+      <b>TTL:</b> 2小时 (FAQ) / 1小时 (RAG)<br>
+      <b>命中场景:</b> "你好""谢谢""怎么退货"(重复查询)<br>
+      <b>写入时机:</b> BM25命中后写入 / RAG生成后写入<br>
+      <b>降级:</b> Redis不可用→静默跳过
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h" style="color:#fbbf24">🔎 第2层: BM25 + MySQL FAQ</div>
+    <div class="card-p">
+      <b>数据表:</b> ecom_faq (23条, category+question+answer)<br>
+      <b>算法:</b> jieba分词 → BM25Okapi → raw/avg ratio≥2.0 + raw≥1.8<br>
+      <b>启动:</b> MySQL加载 → Redis缓存问题列表(秒级启动)<br>
+      <b>命中回写:</b> 答案写入Redis(后续请求第1层命中)<br>
+      <b>核心价值:</b> 80%高频客服问题在~15ms内返回
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h" style="color:#10b981">🧬 第3层: RAG 完整管线</div>
+    <div class="card-p">
+      <b>仅在前两层未命中时触发(~20%流量)</b><br>
+      ① Redis缓存检查 → ② Query改写(4策略) → ③ 混合检索(Dense+Sparse+RRF)<br>
+      ④ 父子块映射(子块搜→父块回) → ⑤ Reranker精排 → ⑥ 质检>0.6?<br>
+      ⑦ 高危门控(政策法律→转人工) → ⑧ LLM生成 → ⑨ 后处理 → ⑩ 写回缓存
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h" style="color:#a78bfa">📊 延迟对比 (v3.2 vs v4.0)</div>
+    <table class="tbl">
+      <tr><th>场景</th><th>v3.2 (旧)</th><th>v4.0 (新)</th><th>提升</th></tr>
+      <tr><td>闲聊("你好")</td><td>&lt;1ms</td><td>&lt;1ms</td><td>—</td></tr>
+      <tr><td>FAQ("怎么退货")</td><td>~3000ms</td><td class="hi">~15ms</td><td>200x</td></tr>
+      <tr><td>订单查询</td><td>~500ms</td><td>~500ms</td><td>—</td></tr>
+      <tr><td>复杂RAG</td><td>~3000ms</td><td>~2000ms</td><td>1.5x</td></tr>
+      <tr><td><b>加权平均</b></td><td><b>~3000ms</b></td><td class="hi"><b>~408ms</b></td><td><b>7x</b></td></tr>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════ 3.5 RAG 检索管线 (第3层详细) ═══════════════ -->
+<h2>🔬 3.5. RAG 检索管线 (第3层 — 仅在前两层未命中时触发)</h2>
+<div class="sec c-green">
+<div class="flow">
+  <div class="flow-item" style="border-color:#10b981">💾 ① Redis 缓存<br><small>命中→直接返回</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">✏️ ② Query 改写<br><small>4策略并行(可配置关闭)</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">🔀 ③ 混合检索<br><small>Dense + Sparse + RRF</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">📊 ④ Reranker 精排<br><small>BGE-Reranker-v2-m3</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">✅ ⑤ 质检门控<br><small>首条 &gt; 0.6?</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#ef4444">🛡️ ⑤.5 高危门控<br><small>政策/法律?→转人工</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">🤖 ⑥ LLM 生成<br><small>temp=0.1 + Few-shot</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">🔒 ⑦ 后处理<br><small>幻觉检测 · 敏感词</small></div><span class="flow-arrow">⇢</span>
+  <div class="flow-item" style="border-color:#10b981">💾 ⑧ 写回缓存<br><small>Redis TTL=1h · 异步</small></div>
+</div>
+<hr>
+<div class="grid grid3">
+  <div class="card"><div class="card-h">检索策略 (4种)</div><div class="card-p">
+    <b>DIRECT</b> 直接检索 (中性·默认)<br>
+    <b>HyDE</b> 假设文档检索 (焦虑·生成假想答案再搜)<br>
+    <b>SUBQUERY</b> 子查询检索 (困惑·拆分子问题并行搜)<br>
+    <b>BACKTRACK</b> 回溯检索 (愤怒·简化query回溯原始意图)
+  </div></div>
+  <div class="card"><div class="card-h">父子块策略</div><div class="card-p">
+    <b>父块:</b> 1000字符 (完整上下文→LLM)<br>
+    <b>子块:</b> 300字符 (向量检索→Milvus)<br>
+    <b>映射:</b> 子块命中→parent_id去重→返回父块<br>
+    精准匹配 + 完整上下文兼得
+  </div></div>
+  <div class="card"><div class="card-h">多路融合 (RRF)</div><div class="card-p">
+    <b>稠密检索:</b> BGE-M3 1024维稠密向量<br>
+    <b>稀疏检索:</b> BM25 关键词匹配<br>
+    <b>多向量检索:</b> 标题+摘要分开编码<br>
+    <b>RRF融合:</b> Reciprocal Rank Fusion k=60
+  </div></div>
+</div>
+</div>
+
+<!-- ═══════════════ 3.5 父子块检索 ═══════════════ -->
+<h2>🧬 3.5. 父子块检索架构 (v3.2 核心升级)</h2>
+<div class="sec c-green">
+<div class="flow">
+  <div class="flow-item" style="border-color:#3b82f6">🗄️ MySQL<br><small>custom_knowledge<br>91条原文(唯一数据源)</small></div><span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#10b981">✂️ ParentChildChunker<br><small>父块1000字<br>子块300字</small></div><span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#10b981">🧬 Milvus<br><small>子块(chunk_type=child)<br>父块(chunk_type=parent)<br>parent_id关联</small></div><span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#8b5cf6">🔍 检索<br><small>子块精准匹配<br>→提取parent_id<br>→取父块完整上下文</small></div><span class="flow-arrow">→</span>
+  <div class="flow-item" style="border-color:#ec4899">🤖 LLM生成<br><small>1000字完整上下文<br>非碎片拼凑</small></div>
+</div>
+</div>
+
+<!-- ═══════════════ 4. 数据层 ═══════════════ -->
+<h2>🗄️ 4. 数据层 — MySQL (关系事实) + Milvus (语义向量) + 外部API</h2>
+<div class="sec">
+<div class="grid grid2">
+  <div class="c-blue">
+    <div class="card">
+      <div class="card-h">🐬 MySQL — 结构化事实库</div>
+      <table class="tbl">
+        <tr><th>表名</th><th>用途</th><th>读写方</th></tr>
+        <tr><td>shops</td><td>店铺信息 · 淘宝token</td><td>知识管理</td></tr>
+        <tr><td>products</td><td>商品缓存 (71条)</td><td>Business读 · 淘宝同步写</td></tr>
+        <tr><td>orders</td><td>订单记录 (30条,7状态)</td><td>Business读写</td></tr>
+        <tr><td>custom_knowledge</td><td>商户知识 (65条)</td><td>KnowledgeMgmt写</td></tr>
+        <tr><td>ecom_faq</td><td>🆕 FAQ问答 (23条) — BM25检索</td><td>BM25Search读</td></tr>
+        <tr><td>conversation_history</td><td>对话持久化</td><td>所有Agent写</td></tr>
+        <tr><td>user_profile</td><td>用户画像 · 偏好标签</td><td>Router写</td></tr>
+        <tr><td>clarify_logs</td><td>反问日志 · 模型优化</td><td>Router写</td></tr>
+        <tr><td>support_tickets</td><td>工单 (转人工)</td><td>Escalate写</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="c-green">
+    <div class="card">
+      <div class="card-h">🧬 Milvus — 语义向量库</div>
+      <table class="tbl">
+        <tr><th>Collection</th><th>存储内容</th><th>维度</th></tr>
+        <tr><td>ecom_knowledge_v1</td><td>商户知识子块 (91块)</td><td class="hi">1024</td></tr>
+        <tr><td>ecom_products_v1</td><td>商品描述向量</td><td class="hi">1024</td></tr>
+        <tr><td>ecom_policies_v1</td><td>店铺政策向量</td><td class="hi">1024</td></tr>
+      </table>
+      <div class="card-p" style="margin-top:10px">
+        <b>Embedding:</b> BGE-M3 1024维稠密+稀疏+多向量<br>
+        <b>索引:</b> COSINE · IVF_FLAT<br>
+        <b>多租户:</b> shop_id 字段隔离<br>
+        <b>降级:</b> Chroma 本地模式
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-h">🚚 外部API</div>
+      <div class="card-p">
+        <b>快递鸟:</b> 即时查询(8002) · 600+快递公司 · 实时轨迹<br>
+        <b>淘宝开放平台:</b> taobao.items.onsale.get · 商品导入 · 搜索兜底<br>
+        <b>Redis:</b> RAG缓存 TTL=1h · 高频查询加速
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════ 4.5 安全边界 ═══════════════ -->
+<h2>🛡️ 4.5. 安全边界 — 高危门控 + LLM兜底策略</h2>
+<div class="sec">
+<div class="grid grid2">
+  <div class="c-red"><div class="card">
+    <div class="card-h">🚨 高危门控（政策/法律/赔付）</div>
+    <div class="card-p">
+      <b>30+ 高危关键词:</b> 退款 退货 换货 赔付 赔偿 假一赔 赔几 法律 条款 保修 质保 三包 假货 真伪 维权 12315 发票 消费者权益<br><br>
+      <b>门控逻辑:</b><br>
+      ① 意图检测(after_sales/complaint) + 关键词匹配 → 高危判定<br>
+      ② 检查RAG检索的文档是否真的包含相关政策内容<br>
+      ③ 无精确匹配 → 🚨 强制转人工，绝不用LLM通识编造<br><br>
+      <b>案例:</b> "假一赔几?" → 知识库无此政策 → 转人工，不瞎编"假一赔十"
+    </div>
+  </div></div>
+  <div class="c-green"><div class="card">
+    <div class="card-h">🤖 LLM通识兜底（非高危场景）</div>
+    <div class="card-p">
+      <b>触发条件:</b> 商品参数/通识问题 + RAG搜不到<br>
+      <b>Few-shot 自然免责:</b><br>
+      ❌ 旧: "💡以上信息基于通用知识，如需了解本店具体商品详情，建议查看商品页面或联系客服400-618-8888"<br>
+      ✅ 新: "这款手机一般配6000mAh电池，正常用一天半没问题～不过具体续航还是以咱们商品页为准哦！"<br><br>
+      <b>Prompt 策略:</b> 用正反示例教会LLM把免责自然融进句子里，读起来像真人客服
+    </div>
+  </div></div>
+</div>
+<div class="grid grid2" style="margin-top:14px">
+  <div class="c-orange"><div class="card">
+    <div class="card-h">📊 安全边界矩阵</div>
+    <table class="tbl">
+      <tr><th>场景</th><th>知识库有</th><th>知识库无</th></tr>
+      <tr><td>商品参数/通识</td><td class="hi">✅ 基于文档</td><td>✅ LLM兜底+自然免责</td></tr>
+      <tr><td>退款政策/法律(高危)</td><td class="hi">✅ 基于文档</td><td style="color:#fca5a5">🚨 强制转人工</td></tr>
+      <tr><td>假货赔付/保修(高危)</td><td class="hi">✅ 基于文档</td><td style="color:#fca5a5">🚨 强制转人工</td></tr>
+      <tr><td>业务操作(取消/退款)</td><td>—</td><td>✅ BusinessAgent+确认</td></tr>
+    </table>
+  </div></div>
+  <div class="c-purple"><div class="card">
+    <div class="card-h">💬 上下文感知确认 (v3.2)</div>
+    <div class="card-p">
+      <b>问题:</b> "取消订单JDxxx"→确认提示→用户说"取消"→系统反问"您想做什么?"<br>
+      <b>修复:</b><br>
+      ① Router 检测上轮是确认提示 → 跳过置信度反问<br>
+      ② BusinessAgent 从历史提取 order_id → 无需重复提供<br>
+      ③ 简短回复("取消"/"是的"/"行")→识别为确认→执行<br><br>
+      <b>状态检测:</b> 上轮含"确定要…请回复确认" → 本轮自动走确认通道
+    </div>
+  </div></div>
+</div>
+</div>
+
+<!-- ═══════════════ 5. 模型体系 ═══════════════ -->
+<h2>🧬 5. 模型体系 — 完整技术栈</h2>
+<div class="sec">
+<table class="tbl">
+  <tr><th>层级</th><th>模型</th><th>任务</th><th>指标</th><th>部署</th></tr>
+  <tr><td style="color:#fbbf24">LLM 生成</td><td><b>DeepSeek-V4</b></td><td>RAG生成 · 闲聊 · 反问澄清 · 意图细分 · NER</td><td>temperature=0.1~0.5</td><td><span class="tag tag-orange">API</span></td></tr>
+  <tr><td style="color:#fbbf24">LLM 备选</td><td>阿里百炼 DashScope</td><td>同上 (一键切换)</td><td>OpenAI兼容</td><td><span class="tag tag-orange">API</span></td></tr>
+  <tr><td style="color:#60a5fa">情感分析</td><td><b>BERT-base-chinese</b> (自训练)</td><td>正/负 2分类</td><td class="hi">F1=89.5%</td><td><span class="tag tag-blue">本地GPU</span></td></tr>
+  <tr><td style="color:#60a5fa">意图识别</td><td><b>BERT-base-chinese</b> (自训练)</td><td>8分类意图</td><td>本地推理</td><td><span class="tag tag-blue">本地GPU</span></td></tr>
+  <tr><td style="color:#34d399">文本嵌入</td><td><b>BGE-M3</b></td><td>知识库/Query → 1024维稠密+稀疏向量</td><td>本地推理</td><td><span class="tag tag-green">本地CPU</span></td></tr>
+  <tr><td style="color:#34d399">精排</td><td>BGE-Reranker-v2-m3</td><td>检索结果深度打分排序</td><td>Cross-Encoder</td><td><span class="tag tag-green">本地CPU</span></td></tr>
+</table>
+</div>
+
+<!-- ═══════════════ 6. 完整模型路线 ═══════════════ -->
+<h2>📈 6. 模型演进路线 (传统ML → 深度学习 → 压缩落地)</h2>
+<div class="sec">
+<table class="tbl">
+  <tr><th>阶段</th><th>模型</th><th>准确率</th><th>F1</th><th>模型大小</th><th>推理时间</th><th>技术要点</th></tr>
+  <tr><td>① Baseline</td><td>RF + TF-IDF</td><td>83.38%</td><td>83.38%</td><td>152MB</td><td>~1ms</td><td>jieba分词 · 5000维TF-IDF · n_estimators=100</td></tr>
+  <tr><td>② 轻量</td><td>FastText 词级</td><td>88.47%</td><td>88.47%</td><td>21MB</td><td>&lt;5ms</td><td>子词n-gram · autotuneDuration=120s</td></tr>
+  <tr><td>③ 深度</td><td><b>BERT-base-chinese</b></td><td class="hi">89.55%</td><td class="hi">89.50%</td><td>391MB</td><td>~180ms</td><td>AdamW · lr=5e-5 · epoch=2 · pad=40</td></tr>
+  <tr><td>④ 参考</td><td>StructBERT (阿里达摩院)</td><td>87.31%</td><td>86.66%</td><td>390MB</td><td>~180ms</td><td>业界SOTA参考 · pipeline一键调用</td></tr>
+  <tr><td style="color:#34d399">⑤ ⭐ 蒸馏</td><td style="color:#34d399"><b>BiLSTM Student</b></td><td style="color:#34d399">87.35%</td><td style="color:#34d399" class="hi">87.34%</td><td style="color:#34d399" class="hi">25.4MB</td><td style="color:#34d399" class="hi">&lt;10ms</td><td style="color:#34d399">Teacher=StructBERT · T=2 · α=0.8 · <b>Student反超Teacher</b></td></tr>
+  <tr><td>⑥ 前沿</td><td>LLM (DeepSeek-V4)</td><td>—</td><td>—</td><td>—</td><td>~500ms</td><td>零样本 · RAG增强 · 函数调用</td></tr>
+</table>
+<div style="margin-top:12px;padding:10px 14px;background:rgba(16,185,129,.08);border-radius:8px;font-size:12px;color:#6ee7b7">
+  ⭐ <b>蒸馏亮点:</b> Student BiLSTM (F1=87.34%) <b>反超</b> Teacher StructBERT (F1=86.66%) — 硬标签纠偏 + BiLSTM序列归纳偏置天然适合短文本 · 模型压缩 <b>15倍</b> (390MB→25.4MB) · 推理加速 <b>18倍</b> (180ms→&lt;10ms)
+</div>
+</div>
+
+<!-- ═══════════════ 7. 技术亮点 ═══════════════ -->
+<h2>💡 7. 核心技术亮点 & 面试话术</h2>
+<div class="sec">
+<div class="grid grid2">
+  <div class="card c-green">
+    <div class="card-h">① 多Agent协同编排</div>
+    <div class="card-p">
+      <b>LangGraph</b> 状态图编排 · 非硬编码if-else<br>
+      <b>Router 三维决策</b> — 置信度门控+情绪紧急度+意图分发<br>
+      <b>5 Agent 解耦</b> — 各司其职 · 独立可测 · 水平扩展<br>
+      <b>🆕 v3.1 裁剪:</b> 9→5 Agent (闲聊合并KnowledgeQA · 反问合并Router · 业务读写合一)
+    </div>
+  </div>
+  <div class="card c-blue">
+    <div class="card-h">② 两段式情感+意图</div>
+    <div class="card-p">
+      <b>BERT本地粗分 → LLM细粒度修正</b><br>
+      情感: 2分类(正/负) → 7种细粒度标签<br>
+      意图: 8分类 → LLM置信度修正+实体上下文<br>
+      <b>降级:</b> BERT失败 → LLM零样本兜底<br>
+      平衡精度与成本 · 本地模型零延迟
+    </div>
+  </div>
+  <div class="card c-purple">
+    <div class="card-h">③ 知识蒸馏 · Student反超Teacher</div>
+    <div class="card-p">
+      StructBERT(390MB)→BiLSTM(25MB)<br>
+      <b>F1: 86.66% → 87.34% (反超!)</b><br>
+      硬标签(α=0.2)提供ground-truth纠偏<br>
+      BiLSTM序列归纳偏置天然适合短文本<br>
+      温度T=2 平滑softmax暴露暗知识
+    </div>
+  </div>
+  <div class="card c-orange">
+    <div class="card-h">④ RAG全链路工程化</div>
+    <div class="card-p">
+      缓存→改写(4策略)→混合检索(4路)→RRF融合→父子块映射→Reranker精排→质检门控(>0.6)→LLM生成→后处理(幻觉检测)→写回缓存<br>
+      <b>10步管线 · 工业级落地</b>
+    </div>
+  </div>
+  <div class="card c-pink">
+    <div class="card-h">⑤ 数据分流铁律</div>
+    <div class="card-p">
+      "语义搜商品" → <b>Milvus向量 + LLM</b><br>
+      "查订单/物流/退款" → <b>MySQL精确读写</b><br>
+      "录入知识" → <b>MySQL + Milvus双写</b><br>
+      "闲聊/你好/谢谢" → <b>模板毫秒级</b><br>
+      "垃圾退款!" → <b>情绪紧急转人工</b>
+    </div>
+  </div>
+  <div class="card c-cyan">
+    <div class="card-h">⑥ 工程化细节</div>
+    <div class="card-p">
+      <b>LLM工厂模式:</b> 不同Agent用不同参数 (temperature/thinking/streaming)<br>
+      <b>指数退避重试:</b> LLM调用 3次重试 max_delay=30s<br>
+      <b>SSE流式:</b> Token级实时推送 · 感知/路由事件透明化<br>
+      <b>CORS + 静态文件:</b> 前后端分离 · 单机全栈部署<br>
+      <b>环境隔离:</b> .env.local · Pydantic Settings · 配置中心
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════ 8. 项目结构 ═══════════════ -->
+<h2>📁 8. 项目演进 & 目录结构</h2>
+<div class="sec">
+<div class="tl">
+  <div class="tl-item"><b>EcomSentiment/</b> — 多模型情感分析实验 · 5种模型对比 (RF/FastText/BERT/StructBERT/蒸馏) · Flask+Streamlit部署</div>
+  <div class="tl-item"><b>EcomSentiment_RAG/</b> — RAG知识库版本 · Milvus/Chroma向量检索 · 文档加载器(OCR/PDF/PPT) · BM25+语义混合检索</div>
+  <div class="tl-item"><b>EcomSentiment_agent/</b> (当前) — 多Agent智能问答 · LangGraph编排 · Router三维决策 · 完整RAG管线 · FastAPI+SSE</div>
+  <div class="tl-item">← <b>EcomSentiment</b> 提供BERT情感/意图模型权重</div>
+  <div class="tl-item">← <b>EcomSentiment_RAG</b> 提供知识库原始数据 (txt文档)</div>
+</div>
+<hr>
+<div class="card-p">
+<span class="tag tag-blue">backend/agents/</span> 5个Agent (perception · router · knowledge_qa · business · knowledge_mgmt)<br>
+<span class="tag tag-green">backend/rag/</span> RAG管线 (chunker · retriever · hybrid_searcher · reranker · query_rewriter · post_processor · cache · prompts · 🆕bm25_search · 🆕preprocess)<br>
+<span class="tag tag-purple">backend/core/</span> 基础设施 (database · llm_factory · logger · retry · exceptions)<br>
+<span class="tag tag-orange">backend/models/</span> 数据模型 (db_models 7表 · schemas Pydantic)<br>
+<span class="tag tag-red">backend/data/</span> 情感映射 (sentiment_map · 紧急度矩阵)<br>
+<span class="tag tag-pink">backend/training/</span> BERT微调 (情感2分类 + 意图8分类)<br>
+<span class="tag tag-cyan">data/</span> 模拟数据SQL + static/前端页面
+</div>
+</div>
+
+<!-- ═══════════════ 9. 技术栈 ═══════════════ -->
+<h2>🛠️ 9. 技术栈总览</h2>
+<div class="sec">
+<div class="grid grid4">
+  <div class="card"><div class="card-h" style="color:#60a5fa">Web框架</div><div class="card-p">FastAPI · Uvicorn · SSE · CORS · StaticFiles</div></div>
+  <div class="card"><div class="card-h" style="color:#a78bfa">Agent编排</div><div class="card-p">LangGraph · StateGraph · 条件边路由 · 节点级错误恢复</div></div>
+  <div class="card"><div class="card-h" style="color:#34d399">RAG生态</div><div class="card-p">LangChain · Milvus · BGE-M3 · BM25(jieba+rank-bm25) · Redis</div></div>
+  <div class="card"><div class="card-h" style="color:#fbbf24">LLM</div><div class="card-p">DeepSeek-V4 · DashScope · OpenAI兼容 · 流式+非流式</div></div>
+  <div class="card"><div class="card-h" style="color:#f87171">数据库</div><div class="card-p">MySQL(asyncmy) · Milvus(pymilvus 3.0) · Redis · SQLAlchemy</div></div>
+  <div class="card"><div class="card-h" style="color:#f472b6">深度学习</div><div class="card-p">PyTorch · Transformers · BERT · sentence-transformers</div></div>
+  <div class="card"><div class="card-h" style="color:#22d3ee">外部API</div><div class="card-p">快递鸟(物流轨迹) · 淘宝开放平台(商品) · httpx异步</div></div>
+  <div class="card"><div class="card-h" style="color:#fb923c">工程化</div><div class="card-p">Pydantic Settings · async/await全链路 · 指数退避重试 · 环境隔离</div></div>
+</div>
+</div>
+
+</div>
+</body>
+</html>

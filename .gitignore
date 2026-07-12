@@ -1,0 +1,56 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Model weights (too large for GitHub, download separately)
+*.bin
+*.safetensors
+*.h5
+*.msgpack
+*.pt
+*.pth
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Claude
+.claude/
+.cc-connect/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.sqlite3
+*.db
+
+# Cache
+.pytest_cache/
+*.cache
+
+# Uploading temp files
+*.uploading.cfg
+
+# Config lock
+.config.toml.lock
+
+# PDFs
+*.pdf
+
+# Images (keep only if needed for docs)
+*.png
+*.jpg
+*.webp

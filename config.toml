@@ -1,0 +1,19 @@
+language = "zh"
+
+[[projects]]
+name = "ecom"
+
+[projects.agent]
+type = "claudecode"
+
+[projects.agent.options]
+work_dir = "C:/Users/23387/Desktop/新建文件夹/EcomSentiment_agent"
+mode = "default"
+
+[[projects.platforms]]
+type = "weixin"
+
+[projects.platforms.options]
+token = "b14a3fd08db0@im.bot:060000dd90d71a4468b7c26a9a6e453bbff144"
+base_url = "https://ilinkai.weixin.qq.com"
+account_id = "b14a3fd08db0@im.bot"

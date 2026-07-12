@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 电商智能问答与业务处理系统</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --card: #fff;
+    --primary: #4f46e5;
+    --primary-light: #eef2ff;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --danger: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --bubble-user: #4f46e5;
+    --bubble-ai: #fff;
+    --shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); height:100vh; display:flex; flex-direction:column; }
+
+  /* Header */
+  .header {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 12px 24px; display:flex; align-items:center; gap:12px;
+    box-shadow: var(--shadow);
+  }
+  .header .logo { font-size:28px; }
+  .header h1 { font-size:18px; font-weight:600; color: var(--text); }
+  .header .badge { font-size:11px; background: var(--primary-light); color: var(--primary); padding:2px 8px; border-radius:10px; margin-left:8px; }
+  .header .status { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color: var(--text-muted); }
+  .header .status .dot { width:8px; height:8px; border-radius:50%; background: var(--success); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* Chat area */
+  .chat-container { flex:1; overflow-y:auto; padding:20px; max-width:900px; width:100%; margin:0 auto; }
+  .message { display:flex; gap:12px; margin-bottom:20px; animation: slideIn .3s ease; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .message.user { flex-direction:row-reverse; }
+  .message .avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .message.user .avatar { background: var(--primary); }
+  .message.ai .avatar { background: #f1f5f9; }
+  .message .bubble {
+    max-width:75%; padding:12px 16px; border-radius:16px;
+    font-size:14px; line-height:1.6; color: var(--text);
+    box-shadow: var(--shadow);
+  }
+  .message.user .bubble { background: var(--bubble-user); color: #fff; border-bottom-right-radius:4px; }
+  .message.ai .bubble { background: var(--bubble-ai); border:1px solid var(--border); border-bottom-left-radius:4px; }
+
+  /* Sentiment/Intent tags */
+  .tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .tag { font-size:11px; padding:3px 8px; border-radius:8px; font-weight:500; }
+  .tag.sentiment-positive { background:#d1fae5; color:#065f46; }
+  .tag.sentiment-negative { background:#fee2e2; color:#991b1b; }
+  .tag.sentiment-neutral { background:#f1f5f9; color:#475569; }
+  .tag.sentiment-anxious { background:#fef3c7; color:#92400e; }
+  .tag.sentiment-angry { background:#fee2e2; color:#991b1b; }
+  .tag.intent { background: #eef2ff; color: #4f46e5; }
+
+  /* Typing indicator */
+  .typing { display:flex; gap:4px; padding:8px 0; }
+  .typing span { width:6px; height:6px; border-radius:50%; background: var(--text-muted); animation: bounce 1.4s infinite; }
+  .typing span:nth-child(2) { animation-delay:.2s; }
+  .typing span:nth-child(3) { animation-delay:.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+  /* Input area */
+  .input-area {
+    background: var(--card); border-top:1px solid var(--border);
+    padding:16px 24px; display:flex; gap:12px; align-items:flex-end;
+    max-width:900px; width:100%; margin:0 auto;
+  }
+  .input-area textarea {
+    flex:1; border:1px solid var(--border); border-radius:12px;
+    padding:10px 14px; font-size:14px; resize:none; outline:none;
+    font-family: inherit; max-height:120px; line-height:1.5;
+    transition: border-color .2s;
+  }
+  .input-area textarea:focus { border-color: var(--primary); }
+  .input-area button {
+    background: var(--primary); color: #fff; border:none;
+    padding:10px 20px; border-radius:12px; font-size:14px; font-weight:600;
+    cursor:pointer; transition: all .2s; display:flex; align-items:center; gap:6px;
+  }
+  .input-area button:hover { opacity:.9; transform:translateY(-1px); }
+  .input-area button:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+  /* Quick actions */
+  .quick-actions { display:flex; gap:8px; flex-wrap:wrap; padding:8px 24px 0; max-width:900px; width:100%; margin:0 auto; }
+  .quick-btn {
+    background: var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:6px 14px; font-size:12px; color: var(--text-muted); cursor:pointer;
+    transition: all .2s; white-space:nowrap;
+  }
+  .quick-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Responsive */
+  @media (max-width:600px) {
+    .header { padding:8px 12px; }
+    .header h1 { font-size:15px; }
+    .chat-container { padding:12px; }
+    .message .bubble { max-width:90%; }
+    .input-area { padding:10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="logo">🛒</span>
+  <h1>电商智能问答<span class="badge">v1</span></h1>
+  <div class="status"><span class="dot"></span>在线 · 本地模型</div>
+</div>
+
+<div class="quick-actions" id="quickActions">
+  <button class="quick-btn" onclick="sendQuick('这件衣服是什么材质？会起球吗？')">👕 商品咨询</button>
+  <button class="quick-btn" onclick="sendQuick('我的快递到哪了？怎么查物流？')">📦 查物流</button>
+  <button class="quick-btn" onclick="sendQuick('如何申请退货退款？')">↩️ 售后问题</button>
+  <button class="quick-btn" onclick="sendQuick('帮我推荐一款2000以内的手机')">💡 求推荐</button>
+</div>
+
+<div class="chat-container" id="chat"></div>
+
+<div class="input-area">
+  <textarea id="input" rows="1" placeholder="输入您的问题..." onkeydown="handleKey(event)"></textarea>
+  <button id="sendBtn" onclick="send()">发送 ➤</button>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+let isStreaming = false;
+
+// Auto-resize textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+function sendQuick(text) {
+  if (isStreaming) return;
+  input.value = text;
+  send();
+}
+
+function addMessage(role, content, tags) {
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.innerHTML = `
+    <div class="avatar">${role === 'user' ? '👤' : '🤖'}</div>
+    <div>
+      <div class="bubble">${escapeHtml(content)}</div>
+      ${tags ? `<div class="tags">${tags}</div>` : ''}
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function addTypingIndicator() {
+  const div = document.createElement('div');
+  div.className = 'message ai';
+  div.id = 'typing';
+  div.innerHTML = `<div class="avatar">🤖</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+async function send() {
+  const query = input.value.trim();
+  if (!query || isStreaming) return;
+
+  isStreaming = true;
+  sendBtn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Show user message
+  addMessage('user', query);
+
+  // Show typing
+  const typing = addTypingIndicator();
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: query, user_id: 'web_user', session_id: 'web_session' })
+    });
+    const data = await res.json();
+    removeTyping();
+
+    if (data.success && data.message) {
+      const sentiment = data.message.sentiment_detected || '';
+      const intent = data.message.intent_detected || '';
+      let tags = '';
+      if (sentiment) {
+        const sClass = sentiment.includes('negative') ? 'sentiment-negative' :
+                       sentiment.includes('positive') ? 'sentiment-positive' : 'sentiment-neutral';
+        tags += `<span class="tag ${sClass}">🧠 ${sentiment}</span>`;
+      }
+      if (intent) tags += `<span class="tag intent">🎯 ${intent}</span>`;
+      if (data.processing_time_ms) tags += `<span class="tag">⚡ ${Math.round(data.processing_time_ms)}ms</span>`;
+
+      addMessage('ai', data.message.content, tags);
+    } else {
+      addMessage('ai', '抱歉，处理出错了，请重试。');
+    }
+  } catch(e) {
+    removeTyping();
+    addMessage('ai', `网络错误: ${e.message}`);
+  }
+
+  isStreaming = false;
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML.replace(/\n/g, '<br>');
+}
+
+// Focus on load
+input.focus();
+</script>
+</body>
+</html>

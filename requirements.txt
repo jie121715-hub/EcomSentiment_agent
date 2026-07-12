@@ -1,0 +1,46 @@
+# EcomSentiment_agent v1 — 智能导购系统依赖
+# 安装方式：
+#   conda create -n ecom_agent python=3.11 -y
+#   conda activate ecom_agent
+#   pip install -r requirements.txt
+
+# ── Web 框架 ──
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+sse-starlette>=2.1.0
+
+# ── LangChain 生态 ──
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-openai>=0.3.0
+langchain-chroma>=0.2.0
+langchain-huggingface>=0.1.0
+langchain-community>=0.3.0
+langchain-text-splitters>=0.3.0
+langgraph>=0.2.0
+
+# ── LLM / API ──
+openai>=1.68.0
+httpx>=0.28.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+
+# ── NLP / 深度学习（情感分析本地模型需要）──
+torch>=2.5.0
+transformers>=4.47.0
+sentence-transformers>=3.3.0
+
+# ── 向量数据库 ──
+chromadb>=0.5.0
+
+# ── 工具库 ──
+python-dotenv>=1.0.0
+numpy>=2.2.0
+
+# ── BM25 FAQ 检索 ──
+rank-bm25>=0.2.2
+jieba>=0.42.1
+
+# ── 文档加载（PDF/DOCX上传）──
+PyMuPDF>=1.24.0
+python-docx>=1.1.0
