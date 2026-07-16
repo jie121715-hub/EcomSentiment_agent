@@ -1,0 +1,14 @@
+.git
+__pycache__
+*.pyc
+.env.local
+data/
+*.md
+!README.md
+.gitignore
+.dockerignore
+backend/training/saved_models/
+frontend/node_modules/
+frontend/src/
+.idea/
+.claude/

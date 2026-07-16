@@ -1,0 +1,29 @@
+{
+  "labels": [
+    "happy",
+    "grateful",
+    "neutral",
+    "confused",
+    "anxious",
+    "angry",
+    "disappointed"
+  ],
+  "label_to_id": {
+    "happy": 0,
+    "grateful": 1,
+    "neutral": 2,
+    "confused": 3,
+    "anxious": 4,
+    "angry": 5,
+    "disappointed": 6
+  },
+  "id_to_label": {
+    "0": "happy",
+    "1": "grateful",
+    "2": "neutral",
+    "3": "confused",
+    "4": "anxious",
+    "5": "angry",
+    "6": "disappointed"
+  }
+}

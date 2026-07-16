@@ -1,5 +1,5 @@
 # tests/test_agent.py
-# 电商领域智能问答与业务处理Agent系统 v1 端到端测试。
+# 云答智能客服系统 v1 端到端测试。
 #
 # 运行方式：
 #   cd EcomSentiment_agent
@@ -89,7 +89,7 @@ def test_schemas():
     # 测试枚举
     assert Sentiment.POSITIVE.value == "positive"
     assert SentimentLabel.ANXIOUS.value == "anxious"
-    assert IntentCategory.AFTER_SALES.value == "after_sales"
+    assert IntentCategory.KNOWLEDGE_QA.value == "knowledge_qa"
 
     # 测试 PerceptionResult 构造
     p = PerceptionResult(
@@ -97,7 +97,7 @@ def test_schemas():
         sentiment=Sentiment.POSITIVE,
         sentiment_label=SentimentLabel.NEUTRAL,
         sentiment_confidence=0.9,
-        intent=IntentCategory.PRODUCT_INQUIRY,
+        intent=IntentCategory.KNOWLEDGE_QA,
         entities=[{"type": "product_name", "value": "衣服"}],
         query_summary="咨询衣服质量",
     )
@@ -128,8 +128,8 @@ def test_sentiment_map():
     assert angry_config["escalate_to_human"] is True
 
     # 意图 → 知识库过滤
-    assert get_source_filter("after_sales") == "after_sales"
-    assert get_source_filter("chitchat") == ""
+    assert get_source_filter("business") == "business"
+    assert get_source_filter("knowledge_qa") == ""
 
     print("✅ test_sentiment_map 通过")
 
@@ -226,7 +226,7 @@ async def test_routing_online():
         sentiment=Sentiment.NEGATIVE,
         sentiment_label=SentimentLabel.ANGRY,
         sentiment_confidence=0.92,
-        intent=IntentCategory.ORDER_TRACKING,
+        intent=IntentCategory.BUSINESS,
         entities=[{"type": "order_id", "value": "JD20240706-001"}],
         query_summary="查询物流进度",
     )

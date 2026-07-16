@@ -34,17 +34,17 @@ class SentimentLabel(str, Enum):
 
 
 class IntentCategory(str, Enum):
-    """用户意图分类 — 4类，与4个分发Agent一一对应。
+    """用户意图分类 — 4类，与分发Agent一一对应。
 
-    BERT 10分类输出经映射层聚合为4类：
+    LLM意图分类输出经映射层聚合为3类实际分发：
       product_inquiry/price_inquiry/recommend_request/chitchat/other → knowledge_qa
       order_tracking/modify_order/after_sales(操作类) → business
-      knowledge_mgmt → knowledge_mgmt
       complaint(无订单号) → escalate
+    （knowledge_mgmt 已合并到 knowledge_qa，保留枚举值用于向后兼容）
     """
-    KNOWLEDGE_QA = "knowledge_qa"         # 知识问答（商品咨询/价格/推荐/闲聊/政策）
+    KNOWLEDGE_QA = "knowledge_qa"         # 知识问答（商品咨询/价格/推荐/闲聊/政策/知识管理）
     BUSINESS = "business"                 # 业务处理（查物流/改订单/退款/售后操作）
-    KNOWLEDGE_MGMT = "knowledge_mgmt"     # 知识管理（商户录入/查看/删除知识）
+    KNOWLEDGE_MGMT = "knowledge_mgmt"     # 知识管理（已合并到 knowledge_qa，保留用于兼容）
     ESCALATE = "escalate"                # 工单处理（投诉/愤怒情绪/高危问题）
 
 
@@ -71,6 +71,7 @@ class PerceptionResult(BaseModel):
     sentiment_confidence: float = Field(ge=0, le=1, description="情感分类置信度")
     intent: IntentCategory = Field(description="用户核心意图")
     intent_confidence: float = Field(default=0.85, ge=0, le=1, description="意图分类置信度")
+    fine_intent: str = Field(default="", description="LLM细粒度意图: product_inquiry/price_inquiry/recommend_request/after_sales/order_tracking...")
     entities: list[dict[str, str]] = Field(
         default_factory=list,
         description="提取的实体列表，如 [{'type': 'SKU', 'value': 'ABC123'}, {'type': 'order_id', 'value': '20240706-001'}]"
@@ -83,10 +84,9 @@ class PerceptionResult(BaseModel):
 # ═══════════════════════════════════════════════════════════════
 
 class TargetAgent(str, Enum):
-    """router 分发的目标 Agent（v3 裁剪后：9→4 目标）。"""
+    """router 分发的目标 Agent（3 目标）。"""
     KNOWLEDGE_QA = "knowledge_qa"        # 知识应答 → KnowledgeQAAgent (RAG+LLM，含闲聊兜底)
     BUSINESS = "business"                # 业务操作 → BusinessAgent (MySQL读写合一，含确认流程)
-    KNOWLEDGE_MGMT = "knowledge_mgmt"    # 知识管理 → KnowledgeMgmtAgent (双写)
     ESCALATE = "escalate"                # 转人工
 
 
@@ -201,6 +201,7 @@ class ChatRequest(BaseModel):
     query: str = Field(min_length=1, max_length=2000, description="用户输入")
     user_id: str = Field(default="anonymous", description="用户标识（用于记忆隔离）")
     session_id: str = Field(default="default", description="会话标识")
+    shop_id: str = Field(default="", description="企业编号（多租户隔离）")
     history: list[ConversationHistory] = Field(
         default_factory=list,
         description="对话历史（最多 10 轮）"
@@ -231,3 +232,54 @@ class ChatEvent(BaseModel):
     """SSE 流式输出事件。"""
     event: str = Field(description="事件类型：token|perception|route|function_call|done|error")
     data: str = Field(description="事件携带的数据")
+
+
+# ═══════════════════════════════════════════════════════════════
+# 管理后台：知识库管理
+# ═══════════════════════════════════════════════════════════════
+
+class KnowledgeItem(BaseModel):
+    """知识条目 — 用于添加/批量添加知识。"""
+    content: str = Field(..., description="知识内容（商品介绍/政策规则等）")
+    category: str = Field(default="product", description="分类: product / policy / faq")
+    merchant_id: str = Field(default="default", description="商户ID")
+
+
+class KnowledgeSyncResponse(BaseModel):
+    """知识库同步响应。"""
+    success: bool = False
+    synced: int = 0
+    chunks: int = 0
+    backend: str = ""
+    error: str = ""
+
+
+class TaobaoImportRequest(BaseModel):
+    """淘宝商品导入请求。"""
+    app_key: str = Field(..., description="淘宝开放平台 App Key")
+    app_secret: str = Field(..., description="淘宝开放平台 App Secret")
+    session_key: str = Field(..., description="卖家授权 session（oauth token）")
+    merchant_id: str = Field(default="taobao_shop", description="商户标识")
+    page_size: int = Field(default=50, ge=1, le=200)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 认证相关
+# ═══════════════════════════════════════════════════════════════
+
+class LoginRequest(BaseModel):
+    """登录请求。"""
+    username: str = Field(..., min_length=2, max_length=64, description="用户名或邮箱")
+    password: str = Field(..., min_length=1, description="密码")
+    phone: Optional[str] = Field(default=None, max_length=20, description="手机号（注册时使用）")
+    role: Optional[str] = Field(default=None, max_length=16, description="角色（注册时可选，默认customer）")
+    merchant_id: Optional[str] = Field(default=None, max_length=64, description="商户ID（企业注册时使用）")
+
+
+class TokenResponse(BaseModel):
+    """JWT Token 响应。"""
+    access_token: str = Field(description="JWT Access Token")
+    token_type: str = Field(default="bearer", description="Token 类型")
+    user_id: int = Field(description="用户 ID")
+    username: str = Field(description="用户名")
+    role: str = Field(description="角色：admin / merchant / customer")

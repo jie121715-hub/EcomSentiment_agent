@@ -1,10 +1,10 @@
 # backend/training/train_sentiment.py
-# 情感分类模型训练脚本（BERT 二分类）
+# 情感7分类模型训练脚本（BERT + NLPCC2014 数据）
 #
-# 数据格式：CSV，列名 sentence(文本), label(0/1), dataset(train/dev/test)
+# 数据格式：CSV，列名 sentence(文本), label(0~6), label_name(英文), dataset(train/dev/test)
 # 训练命令：
 #   cd EcomSentiment_agent
-#   python -m backend.training.train_sentiment --data ./data/sentiment_train.csv
+#   python -m backend.training.train_sentiment --data ./data/sentiment_7class_train.csv
 
 import csv
 import json
@@ -30,10 +30,15 @@ from backend.training.config import (
 from backend.core.logger import get_logger
 
 logger = get_logger(__name__)
+NUM_LABELS = len(SENTIMENT_LABELS)  # 7
+
+# GPU 加速配置
+_USE_GPU = torch.cuda.is_available()
+_FP16 = _USE_GPU  # GPU 时启用混合精度训练，速度翻倍、省显存
 
 
 class SentimentDataset(Dataset):
-    """情感分类数据集。"""
+    """情感7分类数据集。"""
 
     def __init__(self, texts: list[str], labels: list[int], tokenizer):
         self.texts = texts
@@ -59,9 +64,9 @@ class SentimentDataset(Dataset):
 
 
 def load_data(data_path: str) -> tuple:
-    """从 CSV 加载情感数据。
+    """从 CSV 加载 7 分类情感数据。
 
-    CSV 列: sentence(文本), label(0=负面/1=正面), dataset(train/dev/test)
+    CSV 列: sentence(文本), label(0~6), label_name(happy/grateful/...), dataset(train/dev/test)
 
     返回: (train_texts, train_labels), (dev_texts, dev_labels), (test_texts, test_labels)
     """
@@ -79,15 +84,14 @@ def load_data(data_path: str) -> tuple:
 
             try:
                 label = int(label_str)
-                if label not in (0, 1):
-                    logger.warning(f"跳过第{row_num}行: label必须是0或1，实际是{label}")
+                if label < 0 or label >= NUM_LABELS:
+                    logger.warning(f"跳过第{row_num}行: label={label} 超出范围 0~{NUM_LABELS-1}")
                     continue
             except ValueError:
                 logger.warning(f"跳过第{row_num}行: label无法转为整数")
                 continue
 
             if dataset not in all_data:
-                logger.warning(f"未知dataset值 '{dataset}'，归入train")
                 dataset = "train"
 
             all_data[dataset][0].append(sentence)
@@ -100,6 +104,14 @@ def load_data(data_path: str) -> tuple:
         f"dev={len(all_data['dev'][0])}, "
         f"test={len(all_data['test'][0])}"
     )
+
+    # 统计各类别分布
+    from collections import Counter
+    train_counter = Counter(all_data["train"][1])
+    logger.info("训练集标签分布:")
+    for i in range(NUM_LABELS):
+        count = train_counter.get(i, 0)
+        logger.info(f"  {i}: {SENTIMENT_LABELS[i]} = {count}")
 
     return all_data["train"], all_data["dev"], all_data["test"]
 
@@ -114,8 +126,8 @@ def compute_metrics(eval_pred) -> dict:
 
 
 def train(data_path: str):
-    """训练情感分类模型。"""
-    logger.info("开始训练情感分类模型")
+    """训练 7 分类情感识别模型。"""
+    logger.info(f"开始训练情感7分类模型 (标签: {SENTIMENT_LABELS})")
 
     # 1. 加载数据
     (train_texts, train_labels), (dev_texts, dev_labels), (test_texts, test_labels) = load_data(data_path)
@@ -123,17 +135,12 @@ def train(data_path: str):
     if len(train_texts) < 100:
         raise ValueError(f"训练数据量太少 ({len(train_texts)}条)，至少需要100条")
 
-    # 统计正负比例
-    pos_count = sum(1 for lb in train_labels if lb == 1)
-    neg_count = sum(1 for lb in train_labels if lb == 0)
-    logger.info(f"训练集: 正面={pos_count}, 负面={neg_count}", ratio=f"1:{neg_count/pos_count:.1f}" if pos_count > 0 else "all_neg")
-
     # 2. 加载分词器和模型
-    logger.info(f"加载基座模型: {BERT_BASE_PATH}")
+    logger.info(f"加载基座模型: {BERT_BASE_PATH} (num_labels={NUM_LABELS})")
     tokenizer = BertTokenizer.from_pretrained(BERT_BASE_PATH)
     model = BertForSequenceClassification.from_pretrained(
         BERT_BASE_PATH,
-        num_labels=2,
+        num_labels=NUM_LABELS,
     )
     model.to(DEVICE)
 
@@ -152,13 +159,13 @@ def train(data_path: str):
         weight_decay=WEIGHT_DECAY,
         learning_rate=LEARNING_RATE,
         logging_dir=os.path.join(SENTIMENT_MODEL_DIR, "logs"),
-        logging_steps=10,
+        logging_steps=50,
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
         save_total_limit=1,
         metric_for_best_model="macro_f1",
-        fp16=False,
+        fp16=_FP16,
         report_to="none",
     )
 
@@ -170,7 +177,7 @@ def train(data_path: str):
         compute_metrics=compute_metrics,
     )
 
-    logger.info("开始训练...")
+    logger.info(f"开始训练... (GPU={_USE_GPU}, fp16={_FP16}, device={DEVICE})")
     trainer.train()
 
     # 5. 评估
@@ -182,7 +189,7 @@ def train(data_path: str):
     pred_labels = np.argmax(predictions.predictions, axis=-1)
     report = classification_report(eval_ds.labels, pred_labels, target_names=SENTIMENT_LABELS)
     print("\n" + "=" * 60)
-    print("情感分类 - 评估报告")
+    print("情感7分类 - 评估报告")
     print("=" * 60)
     print(report)
     print("混淆矩阵:")
@@ -193,8 +200,11 @@ def train(data_path: str):
     model.save_pretrained(SENTIMENT_MODEL_DIR)
     tokenizer.save_pretrained(SENTIMENT_MODEL_DIR)
 
+    # 保存标签映射（模型输出ID → 英文标签）
+    label_map = {str(i): SENTIMENT_LABELS[i] for i in range(NUM_LABELS)}
+    label_map["_description"] = "情感7分类标签: 0=happy 1=grateful 2=neutral 3=confused 4=anxious 5=angry 6=disappointed"
     with open(os.path.join(SENTIMENT_MODEL_DIR, "label_map.json"), "w", encoding="utf-8") as f:
-        json.dump({"0": "负面", "1": "正面"}, f, ensure_ascii=False, indent=2)
+        json.dump(label_map, f, ensure_ascii=False, indent=2)
 
     logger.info(f"模型已保存到: {SENTIMENT_MODEL_DIR}")
     logger.info("训练完成!")
@@ -203,8 +213,12 @@ def train(data_path: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="训练情感分类模型")
-    parser.add_argument("--data", type=str, default=r"C:\Users\23387\Desktop\新建文件夹\EcomSentiment_agent\data\sentiment_train.csv", help="CSV训练数据路径")
+    parser = argparse.ArgumentParser(description="训练情感7分类模型")
+    parser.add_argument(
+        "--data", type=str,
+        default=r"D:\电商项目文件\EcomSentiment_agent\data\sentiment_7class_train.csv",
+        help="CSV训练数据路径"
+    )
     args = parser.parse_args()
 
     train(args.data)

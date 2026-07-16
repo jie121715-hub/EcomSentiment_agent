@@ -89,7 +89,7 @@ class EcomRetriever:
             logger.info("retriever.backend", backend="milvus")
             if self._milvus_collection_is_empty():
                 logger.warning("retriever.empty_collection",
-                    hint="请运行 python -m backend.seed_all 导入数据")
+                    hint="请通过管理后台或脚本导入知识数据")
             return
 
         logger.info("retriever.milvus_unavailable", fallback="chroma")
@@ -99,45 +99,69 @@ class EcomRetriever:
 
         if self.vector_store and self.vector_store._collection.count() == 0:
             logger.warning("retriever.empty_chroma",
-                hint="请运行 python -m backend.seed_all 导入数据")
+                hint="请通过管理后台或脚本导入知识数据")
 
     def _try_init_milvus(self) -> bool:
         settings = get_settings()
         try:
-            from pymilvus import connections, utility
-            connections.connect(
-                alias="ecom_agent",
-                host=settings.milvus_host, port=settings.milvus_port,
-                timeout=5,
-            )
-            collections = utility.list_collections(using="ecom_agent")
+            from pymilvus import MilvusClient
+            from langchain_core.documents import Document
+
+            uri = f"http://{settings.milvus_host}:{settings.milvus_port}"
+            client = MilvusClient(uri=uri, timeout=10)
+            collections = client.list_collections()
             logger.info("retriever.milvus_connected",
                 host=settings.milvus_host, port=settings.milvus_port,
                 existing_collections=collections,
             )
-            from langchain_community.vectorstores import Milvus
-            # 🆕 统一使用 ecom_knowledge_v1（不再分散到多个 collection）
-            self.vector_store = Milvus(
-                embedding_function=self.embeddings,
-                collection_name="ecom_knowledge_v1",
-                connection_args={"host": settings.milvus_host, "port": settings.milvus_port},
-                auto_id=True,
-            )
+
+            # 薄封装：MilvusClient → langchain VectorStore 兼容接口
+            embeddings = self.embeddings
+            collection_name = "ecom_knowledge_v1"
+            _client = client  # 闭包引用
+
+            class MilvusClientWrapper:
+                """用 pymilvus.MilvusClient 新 API 实现 similarity_search。"""
+                def similarity_search(self, query, k=5, expr=None, **kwargs):
+                    query_vec = embeddings.embed_query(query)
+                    results = _client.search(
+                        collection_name=collection_name,
+                        data=[query_vec],
+                        limit=k,
+                        filter=expr or "",
+                        output_fields=["pk", "text", "source"],
+                        search_params={"metric_type": "L2", "params": {"nprobe": 10}},
+                    )
+                    docs = []
+                    if results and results[0]:
+                        for hit in results[0]:
+                            entity = hit.get("entity", {})
+                            docs.append(Document(
+                                page_content=entity.get("text", ""),
+                                metadata={"source": entity.get("source", ""), "pk": str(entity.get("pk", ""))},
+                            ))
+                    return docs
+
+            # 验证可工作
+            test_docs = MilvusClientWrapper().similarity_search("退货", k=1)
+            logger.info("retriever.milvus_wrapper_test", found=len(test_docs))
+
+            self.vector_store = MilvusClientWrapper()
+            self._backend = "milvus"
+            self._milvus_client = client
+            self._milvus_collection = collection_name
+            logger.info("retriever.backend", backend="milvus")
             return True
         except Exception as e:
             logger.warning("retriever.milvus_connect_failed", error=str(e)[:80])
-            try:
-                from pymilvus import connections
-                connections.disconnect("ecom_agent")
-            except Exception:
-                pass
         return False
 
     def _milvus_collection_is_empty(self) -> bool:
         try:
-            from pymilvus import Collection
-            col = Collection("ecom_knowledge_v1")
-            return col.num_entities == 0
+            if hasattr(self, '_milvus_client'):
+                stats = self._milvus_client.get_collection_stats(self._milvus_collection)
+                return stats.get("row_count", 0) == 0
+            return True
         except Exception:
             return True
 
@@ -373,7 +397,6 @@ class EcomRetriever:
                 # Milvus: 用 expr 过滤
                 ids_str = ", ".join([f'"{pid}"' for pid in parent_ids])
                 expr = f'parent_id in [{ids_str}]'
-                from langchain_community.vectorstores import Milvus
                 docs = self.vector_store.similarity_search(
                     " ", k=len(parent_ids), expr=expr,
                 )

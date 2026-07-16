@@ -147,10 +147,7 @@ class RAGCache:
     # ── 🆕 FAQ 精确匹配缓存（BM25 命中后写入）──────────────
 
     async def get_answer(self, query: str) -> Optional[str]:
-        """读取 FAQ 精确匹配缓存（Key = answer:{query}）。
-
-        与旧项目 EcomSentiment_RAG 的 RedisClient.get_answer 等价。
-        """
+        """读取 FAQ 精确匹配缓存（Key = answer:{query}）。"""
         if not self._available or not self._redis:
             return None
         try:
@@ -168,10 +165,7 @@ class RAGCache:
             return None
 
     async def set_answer(self, query: str, answer: str):
-        """写入 FAQ 精确匹配缓存（Key = answer:{query}）。
-
-        与旧项目 EcomSentiment_RAG 的 RedisClient.set_answer 等价。
-        """
+        """写入 FAQ 精确匹配缓存（Key = answer:{query}）。"""
         if not self._available or not self._redis:
             return
 

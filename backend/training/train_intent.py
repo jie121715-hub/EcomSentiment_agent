@@ -210,7 +210,7 @@ def train(data_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="训练意图识别模型")
-    parser.add_argument("--data", type=str, default=r"C:\Users\23387\Desktop\新建文件夹\EcomSentiment_agent\data\intent_train_v4.json", help="JSONL训练数据路径")
+    parser.add_argument("--data", type=str, default=r"D:\电商项目文件\EcomSentiment_agent\data\intent_train_v4.json", help="JSONL训练数据路径")
     args = parser.parse_args()
 
     train(args.data)

@@ -7,8 +7,8 @@
 #   淘宝API  — 实时库存、物流轨迹、商品搜索 (RAG兜底)
 #   Redis   — 高频缓存、会话历史
 #
-# 表清单 (7张):
-#   shops / products / orders / user_profile / conversation_history / clarify_logs / support_tickets
+# 表清单 (8张):
+#   shops / products / orders / users / user_profile / conversation_history / custom_knowledge / ecom_faq
 
 from datetime import datetime
 from sqlalchemy import String, Text, DateTime, Integer, Float, JSON, Boolean, func
@@ -99,8 +99,27 @@ class Order(Base):
 
 
 # ═══════════════════════════════════════════════════════════════
-# 用户 & 对话
+# 用户认证 & 对话
 # ═══════════════════════════════════════════════════════════════
+
+class User(Base):
+    """用户认证表 — 系统用户登录认证（JWT）。"""
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, index=True, comment="用户名")
+    email: Mapped[str] = mapped_column(String(128), unique=True, comment="邮箱")
+    phone: Mapped[str] = mapped_column(String(20), default="", comment="手机号")
+    password_hash: Mapped[str] = mapped_column(String(256), comment="bcrypt密码哈希")
+    role: Mapped[str] = mapped_column(String(16), default="customer", comment="角色：admin / merchant / customer")
+    merchant_id: Mapped[str] = mapped_column(String(64), default="", comment="绑定的商户ID（merchant角色）")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="账号是否激活")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<User {self.id}: {self.username} [{self.role}]>"
+
 
 class UserProfile(Base):
     """用户画像表 — 轻量版：记录偏好标签。"""
@@ -140,48 +159,6 @@ class ConversationRecord(Base):
 # 运营表
 # ═══════════════════════════════════════════════════════════════
 
-class ClarifyLog(Base):
-    """澄清日志表 — 低置信度反问事件，用于模型迭代。"""
-    __tablename__ = "clarify_logs"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[str] = mapped_column(String(64), default="anonymous", index=True)
-    shop_id: Mapped[str] = mapped_column(String(64), default="", comment="关联店铺")
-    session_id: Mapped[str] = mapped_column(String(64), default="default")
-    original_query: Mapped[str] = mapped_column(Text, comment="用户原始问题")
-    detected_intent: Mapped[str] = mapped_column(String(32), comment="检测到的意图（低置信度）")
-    confidence: Mapped[float] = mapped_column(Float, default=0.0)
-    clarification_question: Mapped[str] = mapped_column(Text, comment="反问内容")
-    user_response: Mapped[str] = mapped_column(Text, default="", comment="用户回复")
-    entities: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-
-    def __repr__(self):
-        return f"<ClarifyLog {self.id}: intent={self.detected_intent}>"
-
-
-class SupportTicket(Base):
-    """工单表 — 转人工/紧急升级事件。"""
-    __tablename__ = "support_tickets"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    ticket_id: Mapped[str] = mapped_column(String(32), unique=True, index=True, comment="TK-YYYYMMDD-XXXX")
-    user_id: Mapped[str] = mapped_column(String(64), default="anonymous", index=True)
-    shop_id: Mapped[str] = mapped_column(String(64), default="", index=True, comment="关联店铺")
-    session_id: Mapped[str] = mapped_column(String(64), default="default")
-    urgency: Mapped[str] = mapped_column(String(16), default="normal", comment="normal/elevated/critical")
-    reason: Mapped[str] = mapped_column(String(255))
-    original_query: Mapped[str] = mapped_column(Text)
-    sentiment: Mapped[str] = mapped_column(String(32), default="")
-    intent: Mapped[str] = mapped_column(String(32), default="")
-    status: Mapped[str] = mapped_column(String(16), default="open", comment="open/assigned/resolved/closed")
-    assigned_to: Mapped[str] = mapped_column(String(64), default="")
-    resolution: Mapped[str] = mapped_column(Text, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
-
-    def __repr__(self):
-        return f"<SupportTicket {self.ticket_id}: [{self.status}]>"
 
 
 class CustomKnowledge(Base):
@@ -223,3 +200,23 @@ class EcomFAQ(Base):
 
     def __repr__(self):
         return f"<EcomFAQ {self.id}: [{self.category}] {self.question[:30]}>"
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🆕 澄清反问日志表（路由层记录低置信度反问）
+# ═══════════════════════════════════════════════════════════════
+
+class ClarifyLog(Base):
+    """澄清反问日志 — 记录路由层因置信度不足触发的反问，用于模型优化。"""
+    __tablename__ = "clarify_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    original_query: Mapped[str] = mapped_column(Text, comment="用户原始问题")
+    detected_intent: Mapped[str] = mapped_column(String(32), comment="检测到的意图")
+    confidence: Mapped[float] = mapped_column(Float, comment="意图置信度")
+    clarification_question: Mapped[str] = mapped_column(Text, comment="反问澄清问题")
+    entities: Mapped[dict] = mapped_column(JSON, default=dict, comment="识别到的实体")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    def __repr__(self):
+        return f"<ClarifyLog {self.id}: [{self.detected_intent}] {self.original_query[:30]}>"

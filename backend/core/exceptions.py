@@ -4,7 +4,7 @@
 # retry.py 据此决定要不要重试。
 
 
-class EcomAgentBaseError(Exception):
+class YunDaBaseError(Exception):
     """所有自定义异常的基类。"""
     def __init__(self, message: str = "", details: dict | None = None):
         super().__init__(message)
@@ -13,7 +13,7 @@ class EcomAgentBaseError(Exception):
 
 # ── 可重试异常（网络/服务临时故障，重试可能恢复）──
 
-class RetryableError(EcomAgentBaseError):
+class RetryableError(YunDaBaseError):
     """可重试异常的标记类。子类异常会被 with_retry 自动重试。"""
     pass
 
@@ -40,7 +40,7 @@ class RAGRetrievalError(RetryableError):
 
 # ── 不可重试异常（参数/认证/配置问题，重试也没用）──
 
-class NonRetryableError(EcomAgentBaseError):
+class NonRetryableError(YunDaBaseError):
     """不可重试异常的标记类。子类异常不会重试，直接走降级。"""
     pass
 
@@ -65,12 +65,12 @@ class ModelLoadError(NonRetryableError):
     pass
 
 
-class SentimentAnalysisError(EcomAgentBaseError):
+class SentimentAnalysisError(YunDaBaseError):
     """情感分析出错。"""
     pass
 
 
-class IntentClassificationError(EcomAgentBaseError):
+class IntentClassificationError(YunDaBaseError):
     """意图分类出错。"""
     pass
 

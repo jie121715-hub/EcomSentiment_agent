@@ -11,7 +11,7 @@ from typing import Callable, TypeVar, Any
 
 from backend.config import get_settings
 from backend.core.logger import get_logger
-from backend.core.exceptions import is_retryable, EcomAgentBaseError
+from backend.core.exceptions import is_retryable, YunDaBaseError
 
 logger = get_logger(__name__)
 

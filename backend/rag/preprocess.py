@@ -1,7 +1,7 @@
 # backend/rag/preprocess.py
 # 文本预处理工具：jieba分词 + 小写化，用于 BM25 检索。
 #
-# 从 EcomSentiment_RAG/mysql_qa/utils/preprocess.py 移植。
+# jieba分词 + 小写化预处理，服务于 BM25 检索。
 
 import jieba
 

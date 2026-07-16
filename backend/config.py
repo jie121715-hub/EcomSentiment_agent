@@ -34,16 +34,18 @@ class Settings(BaseSettings):
     llm_streaming_temperature: float = 0.3                # 流式输出温度
 
     # ── 情感分析模型路径 ──
-    bert_base_path: str = "../TMFCode_随堂代码/04-bert/bert-base-chinese"
-    sentiment_model_path: str = "../EcomSentiment/04-bert/save_models/bert_classifier_model.pt"
-    sentiment_bert_path: str = "../EcomSentiment/04-bert/SturctBERT"
-    sentiment_label_map: str = "../EcomSentiment/04-bert/SturctBERT/label_mapping.json"
+    bert_base_path: str = "./models/bert-base-chinese"
+    sentiment_model_path: str = "./backend/training/saved_models/sentiment_classifier"
+    sentiment_bert_path: str = "./models/bert-base-chinese"
+    sentiment_label_map: str = "./backend/training/saved_models/sentiment_classifier/label_map.json"
     # 自训练模型（PerceptionAgent 自动发现，优先级最高）
     trained_intent_dir: str = "./backend/training/saved_models/intent_classifier"
     trained_sentiment_dir: str = "./backend/training/saved_models/sentiment_classifier"
+    # ModelScope StructBERT 7分类情绪模型（预训练，无需自训练）
+    emotion_7class_model_dir: str = "./models/emotion_7class"
 
     # ── RAG 检索配置（v3 升级：混合检索 + 精排 + 质检）──
-    rag_data_dir: str = "../EcomSentiment_RAG/rag_qa/data/ecom_data"
+    rag_data_dir: str = "./data/ecom_data"
     rag_retrieval_k: int = 5                              # 最终返回文档数（精排后 Top-K）
     rag_candidate_m: int = 3                              # 最终选取的上下文文档数
     rag_relevance_threshold: float = 0.6                  # 检索质量阈值（首条 < 此值 → 兜底）
@@ -94,7 +96,7 @@ class Settings(BaseSettings):
     milvus_embedding_dim: int = 1024                        # BGE-M3 稠密向量维度
     default_shop_id: str = "shop_001"                        # 默认店铺ID(多租户)
     chroma_persist_dir: str = "./data/chroma_db"             # Chroma 降级路径
-    embedding_model_name: str = "C:/Users/23387/Desktop/新建文件夹/EcomSentiment_RAG/rag_qa/models/bge-m3"  # 🆕 BGE-M3 本地路径
+    embedding_model_name: str = "./models/bge-m3"              # 🆕 BGE-M3 本地路径
     hf_endpoint: str = "https://hf-mirror.com"               # HuggingFace 镜像（国内加速）
 
     # ── MySQL 数据库 ──
@@ -125,13 +127,22 @@ class Settings(BaseSettings):
     admin_api_key: str = "admin"                       # 管理员 API Key
     merchant_api_key: str = "merchant"                 # 商户 API Key
 
+    # ── 🔐 JWT 认证配置 ──
+    jwt_secret_key: str = ""                               # JWT 签名密钥（生产环境务必修改）
+    jwt_algorithm: str = "HS256"                           # JWT 签名算法
+    jwt_access_token_expire_minutes: int = 10080           # Token 过期时间（分钟，默认7天）
+
     # ── 对话记忆配置 ──
     max_history_turns: int = 10                            # 最多保留的对话轮数
 
     @property
     def database_url(self) -> str:
-        """拼出模型文件目录的相对路径（v1 暂不接 Postgres，预留）。"""
-        return f"sqlite:///./data/agent_v1.db"
+        """MySQL 异步连接 URL（asyncmy 驱动）。"""
+        return (
+            f"mysql+asyncmy://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+            f"?charset=utf8mb4"
+        )
 
     class Config:
         """Pydantic 的元配置：告诉 BaseSettings 该怎么读取配置。"""

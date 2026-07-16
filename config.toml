@@ -7,13 +7,19 @@ name = "ecom"
 type = "claudecode"
 
 [projects.agent.options]
-work_dir = "C:/Users/23387/Desktop/新建文件夹/EcomSentiment_agent"
-mode = "default"
+work_dir = "D:/wechat_claude"
+mode = "auto"
+reasoning_effort = "low"
+allowed_tools = ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "WebSearch", "WebFetch"]
+
+[instant_reply]
+enabled = true
+content = "🤔 思考中..."
 
 [[projects.platforms]]
 type = "weixin"
 
 [projects.platforms.options]
-token = "b14a3fd08db0@im.bot:060000dd90d71a4468b7c26a9a6e453bbff144"
+token = "faef8feb5b83@im.bot:0600002cb3853bf7af1826515b6eb56ee82d44"
 base_url = "https://ilinkai.weixin.qq.com"
-account_id = "b14a3fd08db0@im.bot"
+account_id = "faef8feb5b83@im.bot"

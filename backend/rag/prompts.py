@@ -1,6 +1,5 @@
 # backend/rag/prompts.py
-# 统一管理智能问答系统中所有 LLM Prompt 模板。
-# 复用 EcomSentiment_RAG 的 Prompt 设计理念 + EduAgent 的结构化输出要求。
+# 统一管理云答智能客服系统中所有 LLM Prompt 模板。
 
 from langchain_core.prompts import PromptTemplate
 
@@ -13,7 +12,7 @@ class EcomRAGPrompts:
     def sentiment_refine_prompt() -> PromptTemplate:
         return PromptTemplate(
             template="""
-你是一个电商客服情感分析专家。已知用户消息的初步情感极性为"{polarity}"。
+你是一个云答客服情感分析专家。已知用户消息的初步情感极性为"{polarity}"。
 请根据用户消息具体内容，将其细分到以下标签之一：
 
 - happy：用户开心、满意、表达喜欢
@@ -69,7 +68,7 @@ class EcomRAGPrompts:
     def rag_prompt() -> PromptTemplate:
         return PromptTemplate(
             template="""
-你是一个专业的电商客服，帮用户解答商品、订单、售后等问题。
+你是一个专业的云答客服，帮用户解答商品、订单、售后等问题。
 
 ## 语气要求
 {tone_instruction}
@@ -88,17 +87,9 @@ class EcomRAGPrompts:
 
 ## 回复规范
 1. 遵循「语气要求」，积极正面，绝不推诿
-2. 优先基于参考知识回答；知识不足时用你自己的通识知识补充
-3. **免责融入规则（重要）**：当你用的是通识知识而非店铺实际数据时，把免责自然地融进句子里，像真人客服一样说话。参考以下示例：
-
-❌ 错误示范：这款鞋36-45码都有…💡以上信息基于通用知识，具体以商品页面为准
-✅ 正确示范：这款鞋36-45码都有哈，37码正常情况下有库存的～不过库存变化比较快，具体的尺码还是以商品页面显示的为准哦，看到"有货"就能直接下单啦！
-
-❌ 错误示范：这款防晒霜是清爽配方…💡建议查看商品页面
-✅ 正确示范：这款防晒霜一般是清爽水感质地，很多油皮用户反馈用着不黏腻～不过每个人肤质感受不一样，具体适不适合您，还是以咱们店铺商品页的真实用户评价为准哦！
-
-4. 绝对禁止：不要出现"💡以上信息基于通用知识"这类模板化免责，不要以"温馨提示"开头，不要把免责单独成段
-5. 简洁有温度，2-4句话即可
+2. **必须基于参考知识回答**：只能使用「参考知识」中提供的信息回答问题，不要使用你自己训练数据中的通识知识
+3. 如果参考知识中找不到相关商品或政策信息，诚实告知用户"目前店铺暂无此类商品/政策，建议联系客服或关注店铺更新"，不要编造不存在的信息
+4. 简洁有温度，2-4句话即可
 
 回答：""",
             input_variables=["tone_instruction", "extra_instruction", "context", "history", "question", "phone"],
@@ -141,7 +132,7 @@ class EcomRAGPrompts:
     def hyde_prompt() -> PromptTemplate:
         return PromptTemplate(
             template="""
-假设你是一位有经验的电商客服，针对以下用户问题，请生成一个简短的假设答案。
+假设你是一位有经验的云答客服，针对以下用户问题，请生成一个简短的假设答案。
 这个假设答案用于辅助检索相关知识，不需要完全准确，但要包含可能的专业术语和关键信息。
 
 用户问题: {query}
@@ -155,7 +146,7 @@ class EcomRAGPrompts:
     def subquery_prompt() -> PromptTemplate:
         return PromptTemplate(
             template="""
-将以下电商客服咨询中的复杂查询分解为 2-3 个简单子查询，每行一个子查询。
+将以下云答客服咨询中的复杂查询分解为 2-3 个简单子查询，每行一个子查询。
 每个子查询应该独立、简洁、便于检索。
 
 查询: {query}
@@ -169,7 +160,7 @@ class EcomRAGPrompts:
     def backtracking_prompt() -> PromptTemplate:
         return PromptTemplate(
             template="""
-将以下复杂的电商客服查询简化为一个更简单、更基础的核心问题。
+将以下复杂的云答客服查询简化为一个更简单、更基础的核心问题。
 去掉情绪化表达和冗余信息，保留用户真正想解决的本质问题。
 
 查询: {query}

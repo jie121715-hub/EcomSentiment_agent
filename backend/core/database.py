@@ -62,12 +62,22 @@ class Base(DeclarativeBase):
     pass
 
 
-# ── 初始化：建表 ─────────────────────────────────────────────
+# ── 初始化：建表 + 迁移 ─────────────────────────────────────────
 
 async def init_db():
-    """应用启动时调用：创建所有表（不存在则建）。"""
-    # 确保所有 ORM 模型已注册到 Base.metadata
+    """应用启动时调用：先增量迁移，再 create_all 兜底建表。"""
     import backend.models.db_models  # noqa: F401  触发所有表的注册
+
+    # 1. 增量迁移
+    try:
+        from backend.db.migrations import run_migrations
+        applied = await run_migrations()
+        if applied > 0:
+            logger.info("database.migrations_applied", count=applied)
+    except Exception as e:
+        logger.warning("database.migrations_failed", error=str(e))
+
+    # 2. create_all 兜底（新表/新安装）
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

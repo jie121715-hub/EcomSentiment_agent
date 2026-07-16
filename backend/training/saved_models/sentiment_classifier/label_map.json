@@ -1,4 +1,10 @@
 {
-  "0": "负面",
-  "1": "正面"
+  "0": "happy",
+  "1": "grateful",
+  "2": "neutral",
+  "3": "confused",
+  "4": "anxious",
+  "5": "angry",
+  "6": "disappointed",
+  "_description": "情感7分类标签: 0=happy 1=grateful 2=neutral 3=confused 4=anxious 5=angry 6=disappointed"
 }

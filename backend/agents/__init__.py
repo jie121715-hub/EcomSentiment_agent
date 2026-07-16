@@ -1,19 +1,17 @@
 # backend/agents/__init__.py
-# 电商领域智能问答与业务处理Agent系统 - 多Agent体系
+# 云答智能客服系统 - 多Agent体系
 #
-# 🆕 v3.1 Agent 清单（裁剪后：5 Agent）：
-#   ✅ perception       — 感知层：情感+意图+NER（BERT/transformers）
-#   ✅ router           — 🆕 决策大脑：三维决策 + 澄清反问（合并 clarify）
-#   ✅ knowledge_qa     — 知识应答 + 闲聊兜底（合并 chitchat）：RAG+LLM
-#   ✅ business         — 🆕 业务读写合一（合并 business_execute）：MySQL + 确认流程
-#   ✅ knowledge_mgmt   — 知识收纳：MySQL+向量库双写
-#   ✅ graph            — LangGraph编排 + 4路统一分发
+# v4.1 Agent 清单（4 Agent）：
+#   perception       - 感知层：情感+意图+NER（BERT/transformers）
+#   router           - 决策大脑：三维决策 + 澄清反问
+#   knowledge_qa     - 知识应答 + 闲聊兜底：RAG+LLM
+#   business         - 业务读写合一：MySQL + 确认流程
 #
 # 设计：使用惰性导入，独立脚本可按需引入单个Agent，不强制安装全部依赖。
 
 __all__ = [
     "PerceptionAgent", "RoutingAgent", "KnowledgeQAAgent",
-    "BusinessAgent", "KnowledgeMgmtAgent",
+    "BusinessAgent",
     "build_shopping_guide_graph", "ShoppingGuideState",
     "run_shopping_guide", "run_shopping_guide_stream",
 ]
@@ -26,7 +24,6 @@ def __getattr__(name):
         "RoutingAgent":             ("backend.agents.router", "RoutingAgent"),
         "KnowledgeQAAgent":         ("backend.agents.knowledge_qa", "KnowledgeQAAgent"),
         "BusinessAgent":            ("backend.agents.business", "BusinessAgent"),
-        "KnowledgeMgmtAgent":       ("backend.agents.knowledge_mgmt", "KnowledgeMgmtAgent"),
         "build_shopping_guide_graph": ("backend.agents.graph", "build_shopping_guide_graph"),
         "ShoppingGuideState":       ("backend.agents.graph", "ShoppingGuideState"),
         "run_shopping_guide":       ("backend.agents.graph", "run_shopping_guide"),

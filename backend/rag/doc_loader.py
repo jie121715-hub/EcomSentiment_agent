@@ -1,7 +1,7 @@
 # backend/rag/doc_loader.py
 # 🆕 文档加载器：支持 PDF / DOCX 文件上传，提取文本内容。
 #
-# 从 EcomSentiment_RAG/rag_qa/ecom_document_loaders 移植。
+# 支持 PDF/DOCX 文件上传并提取文本内容。
 #
 # 支持格式：
 #   - PDF:  PyMuPDF (fitz) 提取文本
@@ -18,7 +18,7 @@ from backend.core.logger import get_logger
 logger = get_logger(__name__)
 
 # 支持的文件类型
-ALLOWED_EXTENSIONS = {".pdf", ".docx"}
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".md", ".markdown", ".txt"}
 
 
 class DocLoader:
@@ -39,8 +39,10 @@ class DocLoader:
             return self._load_pdf(file_path)
         elif ext == ".docx":
             return self._load_docx(file_path)
+        elif ext in (".md", ".markdown", ".txt"):
+            return self._load_markdown(file_path)
         else:
-            raise ValueError(f"不支持的文件格式: {ext}，仅支持 PDF / DOCX")
+            raise ValueError(f"不支持的文件格式: {ext}，仅支持 PDF / DOCX / Markdown / TXT")
 
     # ── PDF 解析（PyMuPDF）───────────────────────────
 
@@ -137,6 +139,50 @@ class DocLoader:
             raise
         except Exception as e:
             logger.error("doc_loader.docx_failed", file=file_path, error=str(e))
+            raise
+
+        return documents
+
+    # ── Markdown / TXT 解析 ──────────────────────────
+
+    @staticmethod
+    def _load_markdown(file_path: str) -> list[Document]:
+        """读取 Markdown / TXT 文件，保留原始格式。"""
+        documents = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            if content.strip():
+                documents.append(Document(
+                    page_content=content.strip(),
+                    metadata={
+                        "source_file": os.path.basename(file_path),
+                        "type": os.path.splitext(file_path)[1].replace(".", ""),
+                        "file_path": file_path,
+                    },
+                ))
+                logger.info("doc_loader.markdown_loaded",
+                           file=os.path.basename(file_path), chars=len(content))
+            else:
+                logger.warning("doc_loader.markdown_empty", file=file_path)
+        except UnicodeDecodeError:
+            try:
+                with open(file_path, "r", encoding="gbk") as f:
+                    content = f.read()
+                if content.strip():
+                    documents.append(Document(
+                        page_content=content.strip(),
+                        metadata={
+                            "source_file": os.path.basename(file_path),
+                            "type": os.path.splitext(file_path)[1].replace(".", ""),
+                        },
+                    ))
+            except Exception as e:
+                logger.error("doc_loader.markdown_failed", file=file_path, error=str(e))
+                raise
+        except Exception as e:
+            logger.error("doc_loader.markdown_failed", file=file_path, error=str(e))
             raise
 
         return documents

@@ -1,0 +1,26 @@
+{
+  "labels": [
+    "知识问答",
+    "业务处理",
+    "知识管理",
+    "工单处理"
+  ],
+  "labels_en": [
+    "knowledge_qa",
+    "business",
+    "knowledge_mgmt",
+    "escalate"
+  ],
+  "label_to_id": {
+    "knowledge_qa": 0,
+    "business": 1,
+    "knowledge_mgmt": 2,
+    "escalate": 3
+  },
+  "id_to_label": {
+    "0": "知识问答",
+    "1": "业务处理",
+    "2": "知识管理",
+    "3": "工单处理"
+  }
+}

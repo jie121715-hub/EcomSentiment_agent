@@ -1,7 +1,7 @@
 # backend/rag/bm25_search.py
 # 🆕 BM25 + MySQL FAQ 检索层 — 三层架构的第二层（Redis → BM25 → RAG）。
 #
-# 核心流程（对应 EcomSentiment_RAG 的验证方案）：
+# 核心流程：
 #   1. Redis 精确缓存检查 (answer:{query}) → 命中直接返回
 #   2. jieba 分词 → BM25Okapi 打分 → softmax 归一化
 #   3. 最高分 >= threshold(0.85) → MySQL 取标准答案 → 写入 Redis 缓存
@@ -34,9 +34,7 @@ logger = get_logger(__name__)
 class BM25FAQSearch:
     """BM25 FAQ 检索器 — 对高频客服问题做毫秒级关键词匹配。
 
-    与旧项目 EcomSentiment_RAG 的 BM25Search 等价：
-    - 同样的 jieba 分词 + BM25Okapi + softmax 阈值判断
-    - 同样的 Redis → BM25 → MySQL → 缓存回写 流程
+    流程：Redis → BM25(softmax阈值) → MySQL → 缓存回写
     """
 
     def __init__(self):
@@ -135,9 +133,9 @@ class BM25FAQSearch:
 
         流程：Redis精确缓存 → BM25评分 → MySQL取答案 → 缓存回写
 
-        评分策略（经14条FAQ验证）：
+        评分策略：
           - 用 raw_score / avg_score 判断区分度（>2x 表示明显匹配）
-          - 辅以 softmax 验证（>0.30 即可，FAQ数据量小但区分度够）
+          - 辅以 softmax 验证（超过阈值表示匹配）
           - 两个条件都满足才返回答案，避免误匹配
 
         :param query: 用户原始查询

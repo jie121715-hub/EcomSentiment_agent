@@ -18,6 +18,7 @@ __pycache__/
 
 # OS files
 .DS_Store
+DS_Store
 Thumbs.db
 
 # Environment
@@ -29,6 +30,10 @@ Thumbs.db
 .claude/
 .cc-connect/
 
+# Node
+node_modules/
+frontend/dist/
+
 # Logs
 *.log
 logs/
@@ -36,6 +41,7 @@ logs/
 # Database
 *.sqlite3
 *.db
+data/chroma_db/
 
 # Cache
 .pytest_cache/
@@ -54,3 +60,6 @@ logs/
 *.png
 *.jpg
 *.webp
+
+# Model files (too large, download separately)
+models/
