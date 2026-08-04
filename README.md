@@ -1,6 +1,6 @@
 # 云答智能客服系统
 
-基于 **感知-路由-分发** Multi-Agent 协同架构的智能客服系统，支持情感分析、意图识别、RAG 语义检索、业务查询、多租户隔离等全链路客服场景。
+基于 **感知-路由-执行** Multi-Agent 协同架构的智能客服系统，支持情感分析、意图识别、RAG 语义检索、业务查询、多租户隔离等全链路客服场景。
 
 ## 🏗️ 系统架构
 
@@ -11,8 +11,8 @@
        → 4路分发:
            ├─ 📚 知识应答Agent (Redis→BM25→RAG 三层检索引擎)
            ├─ 📦 业务Agent (查物流/订单/库存+改地址/退款)
-           ├─ ❓ 澄清反问 (低置信度→引导用户明确意图)
-           └─ 📞 转人工 (情绪critical / 法律高风险)
+           ├─ ❓ 澄清反问门控 (低置信度→引导用户明确意图)
+           └─ 📞 转人工门控 (情绪critical / 投诉高风险)
 ```
 
 ### 核心技术栈
@@ -22,8 +22,8 @@
 | **Web框架** | FastAPI + SSE 流式响应 |
 | **Agent编排** | LangGraph 状态图 (perceive → route → resolve_context → dispatch) |
 | **LLM** | DeepSeek V4 (主) / 阿里百炼 DashScope (备) |
-| **情感/意图** | BERT 本地模型 — 7类情感 + 3类意图 |
-| **向量检索** | Milvus (主) + Chroma (降级) — BGE-M3 1024维嵌入 |
+| **情感/意图** | BERT 本地模型 — 7类情感 + 2类意图 |
+| **向量检索** | Milvus (主)  — BGE-M3 1024维嵌入 |
 | **RAG管线** | 混合检索(稠密+稀疏) + RRF融合 + BGE-Reranker精排 + Query改写 |
 | **FAQ检索** | BM25 (jieba分词+softmax门控) + Redis缓存 |
 | **数据库** | MySQL 8.0 (SQLAlchemy async) |
@@ -105,8 +105,8 @@ models/
 | 角色 | 用户名 | 密码 |
 |------|--------|------|
 | 管理员 | admin | admin123 |
-| 商户 | merchant | merchant123 |
-| 用户 | customer | customer123 |
+| 商户 | merchant_01 | merchant123 |
+| 用户 | customer_01 | customer123 |
 
 ## 📡 API 接口
 
