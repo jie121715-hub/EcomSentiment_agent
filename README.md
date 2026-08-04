@@ -14,6 +14,9 @@
            ├─ ❓ 澄清反问门控 (低置信度→引导用户明确意图)
            └─ 📞 转人工门控 (情绪critical / 投诉高风险)
 ```
+<img width="556" height="790" alt="image" src="https://github.com/user-attachments/assets/c3247458-fd8a-411f-b4ff-4661205bea4e" />
+
+
 
 ### 核心技术栈
 
